@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-from google.cloud import bigquery
 import altair as alt
 
 # Load the dataset from the provided file path
