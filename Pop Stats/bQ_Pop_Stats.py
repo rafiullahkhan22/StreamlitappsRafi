@@ -3,25 +3,15 @@ import streamlit as st
 from google.cloud import bigquery
 import altair as alt
 
-# Initialize the BigQuery client
-key_path = r"D:\Self Work\marketmosaic-ab9d58c22805.json"
-client = bigquery.Client.from_service_account_json(key_path)
+# Load the dataset from the provided file path
+file_path = r"./2025-01-11T12-41_export.csv"
 
-# Query to fetch data from BigQuery
-query = """
-SELECT
-  *
-FROM
-  `marketmosaic.census_2017_datamodel.Vw_Gender_Age_Group_Population`
-"""
-# Fetch data from BigQuery
+# Load the data
 @st.cache_data
-def fetch_data():
-    query_job = client.query(query)
-    return query_job.to_dataframe()
+def load_data(file_path):
+    return pd.read_csv(file_path)
 
-data = fetch_data()
-
+data = load_data(file_path)
 # Streamlit App
 st.title("Population Statistics Dashboard")
 
@@ -197,3 +187,38 @@ adult_province_gender_bar = alt.Chart(adult_by_province_gender).mark_bar().encod
     height=400
 )
 st.altair_chart(adult_province_gender_bar)
+
+# Top 20 Districts by Population (Stacked by Area Type)
+st.subheader("Top 20 Districts by Population (Urban vs Rural)")
+
+# Calculate total population by district and area type
+top_districts_area = (
+    filtered_data.groupby(["district_name", "area_type"])["group_all_ages"]
+    .sum()
+    .reset_index()
+)
+
+# Get the top 20 districts by total population
+top_districts_total = (
+    filtered_data.groupby("district_name")["group_all_ages"]
+    .sum()
+    .reset_index()
+    .sort_values(by="group_all_ages", ascending=False)
+    .head(20)
+)
+top_district_names = top_districts_total["district_name"]
+
+# Filter the data to include only the top 20 districts
+top_districts_area = top_districts_area[top_districts_area["district_name"].isin(top_district_names)]
+
+# Create a stacked bar chart
+top_districts_area_bar = alt.Chart(top_districts_area).mark_bar().encode(
+    x=alt.X("group_all_ages:Q", title="Population"),
+    y=alt.Y("district_name:N", sort="-x", title="District"),
+    color=alt.Color("area_type:N", title="Area Type"),
+    tooltip=["district_name", "area_type", "group_all_ages"]
+).properties(
+    width=700,
+    height=500
+)
+st.altair_chart(top_districts_area_bar)
