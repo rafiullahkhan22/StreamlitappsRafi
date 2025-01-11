@@ -3,7 +3,7 @@ import streamlit as st
 import altair as alt
 
 # Load the dataset from the provided file path
-file_path = r"C:\Users\Rafi\Documents\2025-01-11T12-41_export.csv"
+file_path = "./2025-01-11T12-41_export.csv"
 
 # Load the data
 @st.cache_data
